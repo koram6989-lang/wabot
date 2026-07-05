@@ -1,0 +1,14 @@
+{
+  "name": "wabot-panel",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "panel": "node panel.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.18",
+    "express": "^4.21.2",
+    "pino": "^9.5.0"
+  }
+}
