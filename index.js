@@ -14,28 +14,40 @@ async function startBot() {
 
   const sock = makeWASocket({
     auth: state,
+
+    // 🔥 WAJIB supaya QR muncul di terminal
     printQRInTerminal: true,
+
+    // 🔥 stabil logging (hindari crash noise)
     logger: pino({ level: "silent" }),
-    browser: ["Ubuntu", "Chrome", "22.04"]
+
+    // 🔥 fingerprint device stabil
+    browser: ["Ubuntu", "Chrome", "22.04"],
+
+    // 🔥 lebih stabil di android/termux
+    markOnlineOnConnect: false,
+    syncFullHistory: false
   });
 
   // simpan session
   sock.ev.on("creds.update", saveCreds);
 
-  // koneksi update (QR + status)
+  // koneksi handler
   sock.ev.on("connection.update", (update) => {
 
     const { connection, lastDisconnect, qr } = update;
 
-    // QR CODE
+    // QR CODE (INI YANG HARUS MUNCUL)
     if (qr) {
-      console.log("\n=== SCAN QR DI BAWAH INI ===\n");
+      console.log("\n========================");
+      console.log("📌 SCAN QR DI BAWAH INI:");
+      console.log("========================\n");
       console.log(qr);
     }
 
     // CONNECTED
     if (connection === "open") {
-      console.log("\n✅ BOT CONNECTED\n");
+      console.log("\n✅ BOT CONNECTED SUCCESS\n");
     }
 
     // DISCONNECTED
@@ -44,14 +56,14 @@ async function startBot() {
       const reason =
         lastDisconnect?.error?.output?.statusCode;
 
-      console.log("❌ DISCONNECTED:", reason);
+      console.log("\n❌ DISCONNECTED:", reason);
 
-      // auto reconnect (kecuali logout)
+      // auto reconnect kecuali logout permanen
       if (reason !== DisconnectReason.loggedOut) {
         console.log("♻️ Reconnecting...");
         startBot();
       } else {
-        console.log("⚠️ Logged out, delete session folder!");
+        console.log("⚠️ Logged out! Hapus folder session.");
       }
     }
 
