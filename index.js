@@ -15,66 +15,58 @@ async function startBot() {
   const sock = makeWASocket({
     auth: state,
 
-    // 🔥 WAJIB supaya QR muncul
     printQRInTerminal: true,
 
-    // 🔥 stabil logging (hindari noise crash)
     logger: pino({ level: "silent" }),
 
-    // 🔥 device fingerprint stabil
     browser: ["Ubuntu", "Chrome", "22.04"],
 
-    // 🔥 NODE 24 FIX MODE
     syncFullHistory: false,
     markOnlineOnConnect: false,
     generateHighQualityLinkPreview: false,
 
-    // 🔥 timeout safety (penting di Node 24)
     defaultQueryTimeoutMs: 60000,
-    connectTimeoutMs: 60000,
     keepAliveIntervalMs: 30000
   });
 
-  // simpan session
+  // SIMPAN SESSION
   sock.ev.on("creds.update", saveCreds);
 
-  // koneksi handler
+  // CONNECTION HANDLER
   sock.ev.on("connection.update", (update) => {
 
-    const { connection, lastDisconnect, qr } = update;
+    const { connection, lastDisconnect } = update;
 
-    // QR CODE
-    if (qr) {
-      console.log("\n========================");
-      console.log("📌 SCAN QR DI BAWAH INI:");
-      console.log("========================\n");
-      console.log(qr);
-    }
-
-    // CONNECTED
     if (connection === "open") {
       console.log("\n✅ BOT CONNECTED SUCCESS\n");
     }
 
-    // DISCONNECTED
     if (connection === "close") {
 
-      const reason =
-        lastDisconnect?.error?.output?.statusCode;
+      const statusCode =
+        lastDisconnect?.error?.output?.statusCode ||
+        lastDisconnect?.error?.code;
 
-      console.log("\n❌ DISCONNECTED:", reason);
+      console.log("\n❌ DISCONNECTED:", statusCode);
 
-      if (reason !== DisconnectReason.loggedOut) {
-        console.log("♻️ Reconnecting...");
-        startBot();
+      const shouldReconnect =
+        statusCode !== DisconnectReason.loggedOut;
+
+      if (shouldReconnect) {
+        console.log("♻️ Reconnecting...\n");
+
+        setTimeout(() => {
+          startBot();
+        }, 3000);
+
       } else {
-        console.log("⚠️ Logged out, hapus folder session.");
+        console.log("⚠️ Logged out. Hapus folder session lalu scan ulang QR.");
       }
     }
 
   });
 
-  // pesan masuk
+  // MESSAGE HANDLER
   sock.ev.on("messages.upsert", async ({ messages }) => {
 
     const msg = messages[0];
@@ -92,17 +84,20 @@ async function startBot() {
     let replies = {};
 
     try {
-      replies = JSON.parse(fs.readFileSync("replies.json"));
+      const file = fs.readFileSync("replies.json", "utf-8");
+      replies = JSON.parse(file || "{}");
     } catch (e) {
-      console.log("❌ replies.json error");
+      console.log("❌ replies.json error / kosong");
     }
 
     const keyword = text.toLowerCase().trim();
 
     if (replies[keyword]) {
+
       await sock.sendMessage(sender, {
         text: replies[keyword]
       });
+
     }
 
   });
