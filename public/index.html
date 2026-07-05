@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>WA Bot Panel</title>
+</head>
+<body>
+
+<h2>Tambah Keyword</h2>
+
+<input id="keyword" placeholder="Keyword">
+<br><br>
+
+<textarea id="reply"
+placeholder="Balasan"></textarea>
+
+<br><br>
+
+<button onclick="saveReply()">
+Simpan
+</button>
+
+<hr>
+
+<h2>Daftar Keyword</h2>
+
+<div id="list"></div>
+
+<script>
+
+async function loadData(){
+
+const data=
+await fetch('/api/replies')
+.then(r=>r.json());
+
+let html='';
+
+for(let k in data){
+
+html+=`
+<p>
+<b>${k}</b><br>
+${data[k]}<br>
+<button onclick="hapus('${k}')">
+Hapus
+</button>
+</p>
+`;
+
+}
+
+document.getElementById('list')
+.innerHTML=html;
+
+}
+
+async function saveReply(){
+
+const keyword=
+document.getElementById('keyword').value;
+
+const reply=
+document.getElementById('reply').value;
+
+await fetch('/api/save',{
+
+method:'POST',
+
+headers:{
+'Content-Type':'application/json'
+},
+
+body:JSON.stringify({
+keyword,
+reply
+})
+
+});
+
+loadData();
+
+}
+
+async function hapus(keyword){
+
+await fetch('/api/delete',{
+
+method:'POST',
+
+headers:{
+'Content-Type':'application/json'
+},
+
+body:JSON.stringify({
+keyword
+})
+
+});
+
+loadData();
+
+}
+
+loadData();
+
+</script>
+
+</body>
+</html>
