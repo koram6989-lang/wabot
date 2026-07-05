@@ -15,16 +15,21 @@ async function startBot() {
   const sock = makeWASocket({
     auth: state,
 
-    // 🔥 WAJIB supaya QR muncul di terminal
+    // 🔥 WAJIB QR MUNCUL DI TERMINAL
     printQRInTerminal: true,
 
-    // 🔥 stabil logging (hindari crash noise)
+    // 🔥 stabil log (hindari noise crash)
     logger: pino({ level: "silent" }),
 
     // 🔥 fingerprint device stabil
     browser: ["Ubuntu", "Chrome", "22.04"],
 
-    // 🔥 lebih stabil di android/termux
+    // 🔥 FIX NODE 24 STABILITY
+    defaultQueryTimeoutMs: 60000,
+    connectTimeoutMs: 60000,
+    keepAliveIntervalMs: 25000,
+
+    // 🔥 hindari overload sync WA Web
     markOnlineOnConnect: false,
     syncFullHistory: false
   });
@@ -32,15 +37,15 @@ async function startBot() {
   // simpan session
   sock.ev.on("creds.update", saveCreds);
 
-  // koneksi handler
+  // koneksi update (QR + status)
   sock.ev.on("connection.update", (update) => {
 
     const { connection, lastDisconnect, qr } = update;
 
-    // QR CODE (INI YANG HARUS MUNCUL)
+    // QR CODE
     if (qr) {
       console.log("\n========================");
-      console.log("📌 SCAN QR DI BAWAH INI:");
+      console.log("📌 SCAN QR INI:");
       console.log("========================\n");
       console.log(qr);
     }
@@ -50,7 +55,7 @@ async function startBot() {
       console.log("\n✅ BOT CONNECTED SUCCESS\n");
     }
 
-    // DISCONNECTED
+    // DISCONNECTED + AUTO RECONNECT
     if (connection === "close") {
 
       const reason =
