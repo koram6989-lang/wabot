@@ -1,113 +1,63 @@
 const express = require("express");
 const fs = require("fs");
-const path = require("path");
 
 const app = express();
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
 
-// Tampilkan index.html dari root
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
-});
-
-// Ambil semua keyword
 app.get("/api/replies", (req, res) => {
 
-    try {
+  const data =
+    JSON.parse(fs.readFileSync("replies.json"));
 
-        const data = JSON.parse(
-            fs.readFileSync("replies.json", "utf8")
-        );
-
-        res.json(data);
-
-    } catch {
-
-        res.json({});
-
-    }
+  res.json(data);
 
 });
 
-// Simpan keyword
 app.post("/api/save", (req, res) => {
 
-    const { keyword, reply } = req.body;
+  const { keyword, reply } = req.body;
 
-    if (!keyword || !reply) {
+  let data =
+    JSON.parse(fs.readFileSync("replies.json"));
 
-        return res.json({
-            status: false,
-            message: "Keyword dan balasan wajib diisi"
-        });
+  data[keyword.toLowerCase()] = reply;
 
-    }
+  fs.writeFileSync(
+    "replies.json",
+    JSON.stringify(data, null, 2)
+  );
 
-    let data = {};
-
-    try {
-
-        data = JSON.parse(
-            fs.readFileSync("replies.json", "utf8")
-        );
-
-    } catch {}
-
-    data[keyword.toLowerCase().trim()] = reply;
-
-    fs.writeFileSync(
-        "replies.json",
-        JSON.stringify(data, null, 2)
-    );
-
-    res.json({
-        status: true,
-        message: "Berhasil disimpan"
-    });
+  res.json({
+    status: true
+  });
 
 });
 
-// Hapus keyword
 app.post("/api/delete", (req, res) => {
 
-    const { keyword } = req.body;
+  const { keyword } = req.body;
 
-    let data = {};
+  let data =
+    JSON.parse(fs.readFileSync("replies.json"));
 
-    try {
+  delete data[keyword];
 
-        data = JSON.parse(
-            fs.readFileSync("replies.json", "utf8")
-        );
+  fs.writeFileSync(
+    "replies.json",
+    JSON.stringify(data, null, 2)
+  );
 
-    } catch {}
-
-    delete data[keyword];
-
-    fs.writeFileSync(
-        "replies.json",
-        JSON.stringify(data, null, 2)
-    );
-
-    res.json({
-        status: true,
-        message: "Berhasil dihapus"
-    });
+  res.json({
+    status: true
+  });
 
 });
 
-// Jalankan server
-const PORT = 3000;
+app.listen(3000, () => {
 
-app.listen(PORT, () => {
+  console.log("Panel running");
+  console.log("http://localhost:3000");
 
-    console.log("");
-    console.log("================================");
-    console.log(" PANEL BOT BERJALAN");
-    console.log("================================");
-    console.log(`http://localhost:${PORT}`);
-    console.log("");
-
-});
+});});
