@@ -15,29 +15,30 @@ async function startBot() {
   const sock = makeWASocket({
     auth: state,
 
-    // 🔥 WAJIB QR MUNCUL DI TERMINAL
+    // 🔥 WAJIB supaya QR muncul
     printQRInTerminal: true,
 
-    // 🔥 stabil log (hindari noise crash)
+    // 🔥 stabil logging (hindari noise crash)
     logger: pino({ level: "silent" }),
 
-    // 🔥 fingerprint device stabil
+    // 🔥 device fingerprint stabil
     browser: ["Ubuntu", "Chrome", "22.04"],
 
-    // 🔥 FIX NODE 24 STABILITY
+    // 🔥 NODE 24 FIX MODE
+    syncFullHistory: false,
+    markOnlineOnConnect: false,
+    generateHighQualityLinkPreview: false,
+
+    // 🔥 timeout safety (penting di Node 24)
     defaultQueryTimeoutMs: 60000,
     connectTimeoutMs: 60000,
-    keepAliveIntervalMs: 25000,
-
-    // 🔥 hindari overload sync WA Web
-    markOnlineOnConnect: false,
-    syncFullHistory: false
+    keepAliveIntervalMs: 30000
   });
 
   // simpan session
   sock.ev.on("creds.update", saveCreds);
 
-  // koneksi update (QR + status)
+  // koneksi handler
   sock.ev.on("connection.update", (update) => {
 
     const { connection, lastDisconnect, qr } = update;
@@ -45,7 +46,7 @@ async function startBot() {
     // QR CODE
     if (qr) {
       console.log("\n========================");
-      console.log("📌 SCAN QR INI:");
+      console.log("📌 SCAN QR DI BAWAH INI:");
       console.log("========================\n");
       console.log(qr);
     }
@@ -55,7 +56,7 @@ async function startBot() {
       console.log("\n✅ BOT CONNECTED SUCCESS\n");
     }
 
-    // DISCONNECTED + AUTO RECONNECT
+    // DISCONNECTED
     if (connection === "close") {
 
       const reason =
@@ -63,12 +64,11 @@ async function startBot() {
 
       console.log("\n❌ DISCONNECTED:", reason);
 
-      // auto reconnect kecuali logout permanen
       if (reason !== DisconnectReason.loggedOut) {
         console.log("♻️ Reconnecting...");
         startBot();
       } else {
-        console.log("⚠️ Logged out! Hapus folder session.");
+        console.log("⚠️ Logged out, hapus folder session.");
       }
     }
 
